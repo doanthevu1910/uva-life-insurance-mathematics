@@ -1,0 +1,400 @@
+---
+title: "Life Insurance Mathematics - Week 4 Assignment 3"
+date: "01/10/2021"
+output: pdf_document
+---
+
+\begin{center}
+Group 3: Vu The Doan (12918687), Shagun Saini (13011448), Ngoc Nguyen (13009842), Aljer Lee Zhen Yee (12563412)
+\end{center}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 2
+# a
+```{r}
+library(pracma)
+
+A = 0.00022; B = 2.7*10^-6; c = 1.124
+
+mu_x <- function(x) {
+  A + B*c^x
+}
+
+t_p_x <- function(t, x) {
+  a <- integral(mu_x, x, x+t)
+  exp(-1 * a)
+}
+
+t_p_x_2 <- function(t, x) {
+  s <- exp(-A)
+  g <- exp(-B/(log(c)))
+  return(s^t * g^(c^x * (c^t - 1)))
+}
+
+```
+Check equivalence with a plot:
+```{r}
+plot(0:100, t_p_x_2(1, 0:100), type = "l", xlab = "Age x", ylab = "Px")
+
+a <- NULL
+
+for (i in 0:100) {
+  a[i+1] <- t_p_x(1, i)
+}
+
+points(0:100, a, col = "red")
+```
+It can be seen that the two formulas are equivalent.
+
+# b
+
+Survival function versus t for a person age 20, 40, 60 and 80.
+```{r}
+plot(1:100, t_p_x_2(1:100, 20), type = "l", col = 1, ylim = c(0, 1), lwd = 2,
+     main = "Survival function versus t for a person age x", xlab = "Future lifetime t", ylab = "tPx")
+
+lines(1:100, t_p_x_2(1:100, 40), col = 2, lwd = 2)
+
+lines(1:100, t_p_x_2(1:100, 60), col = 3, lwd = 2)
+
+lines(1:100, t_p_x_2(1:100, 80), col = 4, lwd = 2)
+
+legend("topright",legend = c("20", "40", "60", "80"), col = 1:4, lty = 1, lwd = 2)
+
+```
+
+# c
+
+Create a life table:
+```{r}
+px <- t_p_x_2(1, 0:100)
+
+qx <- 1 - px
+
+age <- 0:100
+
+life_table <- data.frame(age, px, qx); head(life_table)
+```
+
+# Question 3
+We compare the following life insurance products - whole life insurance (annual) and term insurance (annual).
+
+# a 
+
+For whole life insurance (annual).
+
+EPV versus age, for different levels of interest rates (2%, 4%, 6%, and 8%).
+```{r}
+whole_life_insurance <- function(age, i, life_table) {
+  px <- 1 - qx
+  kpx <- c(1, cumprod(px[(age+1):(length(px) - 1)]))
+  kqx <- kpx * qx[(age+1):length(qx)]
+  discount_factors <- (1+i) ^ - (1:length(kqx))
+  sum(discount_factors * kqx)
+}
+
+age <- 0:100; EPV <- NULL
+
+for (i in 1:length(age)) {
+  EPV[i] <- whole_life_insurance(age[i], i = 0.02, life_table)
+}
+
+plot(age, EPV, type = 'l', col = 1, lwd = 2, ylim = c(0, 1),
+     main = "Whole life insurance", xlab = "Age x", ylab = "EPV")
+
+for (i in 1:length(age)) {
+  EPV[i] <- whole_life_insurance(age[i], i = 0.04, life_table)
+}
+
+lines(age, EPV, type = 'l', col = 2, lwd = 2)
+
+for (i in 1:length(age)) {
+  EPV[i] <- whole_life_insurance(age[i], i = 0.06, life_table)
+}
+
+lines(age, EPV, type = 'l', col = 3, lwd = 2)
+
+for (i in 1:length(age)) {
+  EPV[i] <- whole_life_insurance(age[i], i = 0.08, life_table)
+}
+
+lines(age, EPV, type = 'l', col = 4, lwd = 2)
+
+legend("topleft",legend = c("2%", "4%", "6%", "8%"), col = 1:4, lty = 1, lwd = 2)
+```
+For a fixed interest rate, the EPV of a whole life insurance increases with the age as the remaining lifetime of the insured becomes shorter and so the death benefit will have to be paid out sooner. 
+
+EPV versus interest rates, for a person age 20, 40, 60 and 80.
+```{r}
+interest_rates <- seq(0.01, 0.10, by = 0.001); EPV <- NULL
+
+for (i in 1:length(interest_rates)) {
+  EPV[i] <- whole_life_insurance(age = 20, interest_rates[i], life_table)
+}
+
+plot(interest_rates, EPV, type = 'l', col = 1, ylim = c(0, 1), lwd = 2,
+     main = "Whole life insurance (for a person age 20, 40, 60 and 80)", xlab = "Interest rate i", ylab = "EPV")
+
+for (i in 1:length(interest_rates)) {
+  EPV[i] <- whole_life_insurance(age = 40, interest_rates[i], life_table)
+}
+
+lines(interest_rates, EPV, type = 'l', col = 2, lwd = 2)
+
+for (i in 1:length(interest_rates)) {
+  EPV[i] <- whole_life_insurance(age = 60, interest_rates[i], life_table)
+}
+
+lines(interest_rates, EPV, type = 'l', col = 3, lwd = 2)
+
+for (i in 1:length(interest_rates)) {
+  EPV[i] <- whole_life_insurance(age = 80, interest_rates[i], life_table)
+}
+
+lines(interest_rates, EPV, type = 'l', col = 4, lwd = 2)
+
+legend("topright",legend = c("20", "40", "60", "80"), col = 1:4, lty = 1, lwd = 2)
+
+```
+For a fixed age, the EPV of the whole life insurance decreases when the interest rate increases as money grows faster and so the discount factors are smaller.
+
+# b 
+
+For term insurance (annual), with term n = 10 years.
+
+EPV versus age, for different levels of interest rates (2%, 4%, 6%, and 8%).
+```{r}
+term_insurance <- function(age, n, i, life_table) {
+  qx <- life_table$qx
+  px <- 1 - qx
+  kpx <- c(1, cumprod(px[(age+1):(age+n-1)]))
+  kqx <- kpx * qx[(age+1):(age+n)]
+  discount_factors <- (1 + i) ^ - (1:length(kqx))
+  sum(discount_factors * kqx)
+}
+
+age <- 0:100; EPV <- NULL
+
+for (i in 1:length(age)) {
+  EPV[i] <- term_insurance(age[i], n = 10, i = 0.02, life_table)
+}
+
+plot(age, EPV, type = 'l', col = 1, lwd = 2, ylim = c(0, 1),
+     main = "Term insurance (n = 10)", xlab = "Age x", ylab = "EPV")
+
+for (i in 1:length(age)) {
+  EPV[i] <- term_insurance(age[i], n = 10, i = 0.04, life_table)
+}
+
+lines(age, EPV, type = 'l', col = 2, lwd = 2)
+
+for (i in 1:length(age)) {
+  EPV[i] <- term_insurance(age[i], n = 10, i = 0.06, life_table)
+}
+
+lines(age, EPV, type = 'l', col = 3, lwd = 2)
+
+for (i in 1:length(age)) {
+  EPV[i] <- term_insurance(age[i], n = 10, i = 0.08, life_table)
+}
+
+lines(age, EPV, type = 'l', col = 4, lwd = 2)
+
+legend("topleft",legend = c("2%", "4%", "6%", "8%"), col = 1:4, lty = 1, lwd = 2)
+```
+For a fixed interest rate, the EPV of a term insurance increases, the same case as with whole life insurance, with the age during the n years. 
+
+EPV versus interest rates, for a person age 20, 40, 60 and 80.
+
+```{r}
+interest_rates <- seq(0.01, 0.10, by = 0.001); EPV <- NULL
+
+for (i in 1:length(interest_rates)) {
+  EPV[i] <- term_insurance(age = 20, n = 10, interest_rates[i], life_table)
+}
+
+plot(interest_rates, EPV, type = 'l', col = 1, lwd = 2, ylim = c(0, 0.5),
+     main = "Term insurance (term n = 10 years)", xlab = "Interest rate i", ylab = "EPV")
+
+for (i in 1:length(interest_rates)) {
+  EPV[i] <- term_insurance(age = 40, n = 10, interest_rates[i], life_table)
+}
+
+lines(interest_rates, EPV, type = 'l', col = 2, lwd = 2)
+
+for (i in 1:length(interest_rates)) {
+  EPV[i] <- term_insurance(age = 60, n = 10, interest_rates[i], life_table)
+}
+
+lines(interest_rates, EPV, type = 'l', col = 3, lwd = 2)
+
+for (i in 1:length(interest_rates)) {
+  EPV[i] <- term_insurance(age = 80, n = 10, interest_rates[i], life_table)
+}
+
+lines(interest_rates, EPV, type = 'l', col = 4, lwd = 2)
+
+legend("topright",legend = c("20", "40", "60", "80"), col = 1:4, lty = 1, lwd = 2)
+```
+For a fixed age, the EPV of the term insurance decreases slowly as compared to that of with whole life insurance when the interest rate increases as money grows faster and so the discount factors are smaller.
+
+# Question 4
+We compare the following life insurance products - life annuity whole and life annuity due term n (n = 20).
+
+# a 
+
+For life annuity whole.
+
+EPV versus age, for different levels of interest rates (2%, 4%, 6%, and 8%).
+```{r}
+life_annuity_whole <- function(age,i,life_table) {
+  px<-1-life_table$qx
+  kpx<-c(1,cumprod(px[(age+1):length(px)]))
+  discount_factor<-(1+i)^-(0:(length(kpx)-1))
+  benefits <- rep(1,length(kpx))
+  sum(benefits*discount_factor*kpx)
+}
+
+age <- 0:100; EPV <- NULL
+
+for(i in 1:length(age)){
+  EPV[i]<-life_annuity_whole(age[i], i = 0.02, life_table)
+}
+
+plot(age, EPV, main = "Life annuity whole", ylim = c(0, 60),
+     xlab = "Age x", ylab = "EPV", type="l", lwd=2, col = 1)
+
+for(i in 1:length(age)){
+  EPV[i]<-life_annuity_whole(age[i], i = 0.04, life_table)
+}
+
+lines(age, EPV, type = "l", lwd = 2, col = 2)
+
+for(i in 1:length(age)){
+  EPV[i]<-life_annuity_whole(age[i], i = 0.06, life_table)
+}
+
+lines(age, EPV, type = "l", lwd = 2, col = 3)
+
+for(i in 1:length(age)){
+  EPV[i]<-life_annuity_whole(age[i], i = 0.08, life_table)
+}
+
+lines(age, EPV, type = "l", lwd = 2, col = 4)
+
+legend("topright", legend = c("2%", "4%", "6%", "8%"), col = 1:4, lty = 1, lwd = 2)
+```
+EPV versus interest rates, for a person age 20, 40, 60 and 80.
+
+```{r}
+interest_rates<-seq(0.01,0.10, by=0.001); EPV<-NULL
+
+for(i in 1: length (interest_rates)){
+  EPV[i]<-life_annuity_whole(age = 20, interest_rates[i], life_table)
+}
+
+plot(interest_rates, EPV, main = "Life annuity whole", ylim = c(0, 50),
+     xlab="Interest Rate", ylab="EPV", type="l", lwd=2, col = 1)
+
+for(i in 1: length (interest_rates)){
+  EPV[i]<-life_annuity_whole(age = 40, interest_rates[i], life_table)
+}
+
+lines(interest_rates,EPV, type="l", lwd=2, col = 2)
+
+for(i in 1: length (interest_rates)){
+  EPV[i]<-life_annuity_whole(age=60, interest_rates[i], life_table)
+}
+
+lines(interest_rates,EPV, type="l", lwd=2, col = 3)
+
+for(i in 1: length (interest_rates)){
+  EPV[i]<-life_annuity_whole(age=80, interest_rates[i], life_table)
+}
+
+lines(interest_rates,EPV, type="l", lwd=2, col = 4)
+
+legend("topright",legend = c("20", "40", "60", "80"), col = 1:4, lty = 1, lwd = 2)
+
+```
+
+# b
+
+For life annuity term due.
+
+EPV versus age, for different levels of interest rates (2%, 4%, 6%, and 8%).
+```{r}
+life_annuity_due <- function(age, n, i, life_table) {
+  px <- 1 - life_table$qx #replace life table with tpx codes
+  kpx <- c(1, cumprod(px[(age+1):(age+n-1)]))
+  discount_factors <- (1+i)^ - (0:(n-1))
+  sum(discount_factors * kpx)
+}
+
+age <- 0:100; EPV <- NULL
+
+for (i in 1:length(age)) {
+  EPV[i]<-life_annuity_due(age[i], i = 0.02, n = 20, life_table)
+}
+
+plot(age, EPV, main = "Life annuity due (term n = 20)", ylim = c(0, 20),
+     xlab = "Age x", ylab = "EPV", type = "l", lwd = 2, col = 1)
+
+for(i in 1:length(age)){
+  EPV[i]<-life_annuity_due(age[i], i = 0.04, n = 20, life_table)
+}
+
+lines(age, EPV, type = "l", lwd = 2, col = 2)
+
+for(i in 1:length(age)){
+  EPV[i]<-life_annuity_due(age[i], i = 0.06, n = 20, life_table)
+}
+
+lines(age, EPV, type="l", lwd = 2, col = 3)
+
+for(i in 1:length(age)){
+  EPV[i]<-life_annuity_due(age[i], i = 0.08, n = 20, life_table)
+}
+
+lines(age, EPV, type="l", lwd = 2, col = 4)
+
+legend("topright",legend = c("2%", "4%", "6%", "8%"), col = 1:4, lty = 1, lwd = 2)
+
+```
+
+EPV versus interest rates, for a person age 20, 40, 60 and 80.
+
+```{r}
+interest_rates<-seq(0.01,0.10, by=0.001); EPV<-NULL
+
+for(i in 1: length (interest_rates)){
+  EPV[i]<-life_annuity_due(age = 20, interest_rates[i], n = 20, life_table)
+}
+
+plot(interest_rates,EPV ,main="Life annuity due (term n = 20)",
+     xlab="Interest Rate", ylab="EPV", type="l", lwd=2, col = 1, ylim = c(0, 20))
+
+for(i in 1: length (interest_rates)){
+  EPV[i]<-life_annuity_due(age = 40, interest_rates[i], n = 20, life_table)
+}
+
+lines(interest_rates, EPV, type = "l", lwd=2, col = 2)
+
+for(i in 1: length (interest_rates)){
+  EPV[i]<-life_annuity_due(age = 60, interest_rates[i], n = 20, life_table)
+}
+
+lines(interest_rates, EPV, type = "l", lwd=2, col = 3)
+
+for(i in 1: length (interest_rates)){
+  EPV[i]<-life_annuity_due(age = 80, interest_rates[i], n = 20, life_table)
+}
+
+lines(interest_rates, EPV, type = "l", lwd=2, col = 4)
+
+legend("topright",legend = c("20", "40", "60", "80"), col = 1:4, lty = 1, lwd = 2)
+```
+For Life Annuity Due and Life Annuity Whole, as the ages increases the lift expectancy due to the probability of living for the next year 20 years (in perspective of Life Annuity due with n = 20) decreases. As for the interest rate, as i increases, the present value of an annuity decreases. This is because the higher the interest rate, the lower the present value will need to be. The natural compounding factor of higher interest would be necessitate a lower present value. Therefore the EPV decreases as interest rate increases.
