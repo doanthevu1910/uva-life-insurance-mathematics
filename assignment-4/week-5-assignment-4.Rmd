@@ -1,0 +1,167 @@
+---
+title: "Life Insurance Mathematics - Week 5 Assignment 4"
+date: "15/10/2021"
+output: pdf_document
+---
+
+\begin{center}
+Group 3: Vu The Doan (12918687), Shagun Saini (13011448), Ngoc Nguyen (13009842), Aljer Lee Zhen Yee (12563412)
+\end{center}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list = ls())
+```
+
+# Question 1
+
+```{r}
+A = 0.00022; B = 2.7*10^-6; c = 1.124
+
+t_p_x <- function(t, x) {
+  s <- exp(-A)
+  g <- exp(-B/(log(c)))
+  return(s^t * g^(c^x * (c^t - 1)))
+}
+
+age <- 0:100
+px <- t_p_x(1, 0:100)
+qx <- 1- px
+lx <- c(10000, 10000 * cumprod(px[0:(length(px)-1)]))
+dx <- c(lx * qx)
+ex <- c()
+
+for(i in 0:101){
+  ex[i] <- sum(t_p_x(0:100, i))
+}
+
+life_table <- data.frame(age, qx, px, lx, dx, ex); head(life_table)
+
+```
+
+# Question 2 
+
+# 2.1
+```{r}
+i <- 0.05
+
+term_insurance <- function(age, n, i, life_table) {
+  qx <- life_table$qx
+  px <- 1 - qx
+  kpx <- c(1, cumprod(px[(age+1):(age+n-1)]))
+  kqx <- kpx * qx[(age+1):(age+n)]
+  discount_factors <- (1 + i) ^ - (1:length(kqx))
+  sum(discount_factors * kqx)
+}
+
+p1 <- 500000*term_insurance(50, 20, i, life_table); p1
+
+```
+
+# 2.2
+
+```{r}
+life_annuity_due <- function(age, n, i, life_table) {
+  px <- 1 - life_table$qx #replace life table with tpx codes
+  kpx <- c(1, cumprod(px[(age+1):(age+n-1)]))
+  discount_factors <- (1+i)^ - (0:(n-1))
+  sum(discount_factors * kpx)
+}
+
+a1 <- life_annuity_due(50, 20, i, life_table)
+
+p2 <- p1/a1; p2
+```
+
+# 2.3
+
+```{r pressure, echo=FALSE, fig.cap="The expression for the policy value", out.width = '100%'}
+knitr::include_graphics("1.png")
+```
+
+```{r}
+surplus <- c(p2 - 500000*(1/(1+0.05))*life_table$qx[(50+1):(70+1)]) 
+
+barplot(surplus, ylim = c(-3000,1000), 
+        main = "Excess premium over benefit for term insurance (n=20) for (50)",
+        xlab = "Duration (years)", ylab = "EPV")
+
+```
+
+# 2.4
+
+```{r}
+EPV_benefits <- c(); EPV_annuities <- c()
+
+for (k in 1:20) {
+  EPV_benefits <- c(EPV_benefits, 500000*term_insurance(49 + k, 21-k, 0.05, life_table))
+  EPV_annuities <- c(EPV_annuities, p2*life_annuity_due(49 + k, 21-k, 0.05, life_table))
+}
+
+EPV_benefits[20] <- 500000 * life_table$qx[70] * 1.05^-1
+EPV_annuities[20] <- p2
+
+plot(EPV_benefits - EPV_annuities, 
+     main="Policy values for each year", xlab = "Duration (years)", ylab = "Policy value", 
+     pch = 19)
+
+EPV_benefits - EPV_annuities
+```
+
+# 2.5
+
+```{r}
+EPV_Endowment <- 500000*term_insurance(50, 20, 0.05, life_table) 
++ 500000*(life_table$lx[71]/life_table$lx[51])*(1.05)^-20
+
+annuity <- life_annuity_due(50, 20, 0.05, life_table)
+
+Single_premium <- EPV_Endowment
+
+annual_premium <- EPV_Endowment / annuity
+
+EPV_premium_v <- c(Single_premium, rep(0, 20))
+
+EPV_Endowment_v <- c()
+
+for (k in 1:21){
+  if (k==21){
+    EPV_Endowment_v<- c(EPV_Endowment_v, 500000)
+  }
+  else {
+    EPV_Endowment_v <- c(EPV_Endowment_v, 500000*term_insurance(49+k, 21-k, 0.05, life_table) 
+                         + 500000*(life_table$lx[71]/life_table$lx[50+k])*(1.05)^(k-21))
+  }
+}
+
+EPV_premium_v2 <- c()
+EPV_Endowment_v2 <- c()
+for (k in 1:21){
+  if (k==21){
+    EPV_Endowment_v2<- c(EPV_Endowment_v2, 500000)
+    EPV_premium_v2 <- c(EPV_premium_v2, 15122.82)
+  }
+  else {
+    EPV_Endowment_v2 <- c(EPV_Endowment_v2, 500000*term_insurance(49+k, 21-k, 0.05, life_table) 
+                          + 500000*(life_table$lx[71]/life_table$lx[50+k])*(1.05)^(k-21))
+    EPV_premium_v2 <- c(EPV_premium_v2, 15122.82*life_annuity_due(49+k, 21-k, 0.05, life_table)) 
+  }
+}
+
+
+plot(1:21, EPV_Endowment_v - EPV_premium_v, 
+     main="Policy values for each year", 
+     xlab="Time (t)", ylab="Policy value", pch = 19, ylim = c(0, 500000))
+points(1:21, EPV_Endowment_v2 - EPV_premium_v2, col = "red", pch = 19, cex=0.8)
+legend("topleft", legend=c("with single premium", "with annual premium"), 
+       col = c(1, "red"), pch=c(19, 19))
+
+```
+```{r}
+EPV_Endowment_v - EPV_premium_v
+```
+
+```{r}
+EPV_Endowment_v2 - EPV_premium_v2 
+```
