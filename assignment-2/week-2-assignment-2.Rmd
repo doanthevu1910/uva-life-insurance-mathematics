@@ -1,0 +1,243 @@
+---
+title: "Life Insurance Mathematics - Week 2 Assignment 2"
+date: "16/09/2021"
+output: pdf_document
+---
+
+\begin{center}
+Group 3: Vu The Doan (12918687), Shagun Saini (13011448), Ngoc Nguyen (13009842), Aljer Lee Zhen Yee (12563412)
+\end{center}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Question 2
+We used the Belgium data because other data available for download needed a login detail.
+```{r}
+setwd("D:/UvA/BSc Actuarial Science/Year 2/Block 1/Life Insurance Mathematics/Week 2 - Life tables and selection, Valuation of life insurance benefits/Assignment 2")
+
+life_table <- read.table("Belgium.txt", header = TRUE)
+
+head(life_table)
+```
+
+## 2a
+The force of mortality of an (x) year old in year t, versus x, for different selected time periods t is calculated under the Constant force of mortality assumption, using the formula:
+\begin{center}
+$\mu^{*}_x = -log(p_x)$
+\end{center}
+
+```{r}
+#For year 1841
+
+life_table_1841 <- subset(life_table, Year == 1841)
+
+qx_1841 <- as.numeric(life_table_1841$qx)
+
+age_1841 <- as.numeric(life_table_1841$Age)
+
+px_1841 <- 1 - qx_1841
+
+mx_1841 <- -log(px_1841)
+
+plot(age_1841, mx_1841, type = "l", 
+     xlab = "Age", ylab = expression(paste("mu"["x,t"])), 
+     main = expression(paste("mu"["x,t"], " for year 1841, 1900, 1950, 2000, 2015")),
+     lwd = 2, col = 1)
+
+#For year 1900
+
+life_table_1900 <- subset(life_table, Year == 1900)
+
+qx_1900 <- as.numeric(life_table_1900$qx)
+
+age_1900 <- as.numeric(life_table_1900$Age)
+
+px_1900 <- 1 - qx_1900
+
+mx_1900 <- -log(px_1900)
+
+lines(age_1900, mx_1900, type = "l", col = 2, lwd = 2)
+
+#For year 1950
+
+life_table_1950 <- subset(life_table, Year == 1950)
+
+qx_1950 <- as.numeric(life_table_1950$qx)
+
+age_1950 <- as.numeric(life_table_1950$Age)
+
+px_1950 <- 1 - qx_1950
+
+mx_1950 <- -log(px_1950)
+
+lines(age_1950, mx_1950, type = "l", col = 3, lwd = 2)
+
+#For year 2000
+
+life_table_2000 <- subset(life_table, Year == 2000)
+
+qx_2000 <- as.numeric(life_table_2000$qx)
+
+age_2000 <- as.numeric(life_table_2000$Age)
+
+px_2000 <- 1 - qx_2000
+
+mx_2000 <- -log(px_2000)
+
+lines(age_2000, mx_2000, type = "l", col = 4, lwd = 2)
+
+#For year 2015
+
+life_table_2015 <- subset(life_table, Year == 2015)
+
+qx_2015 <- as.numeric(life_table_2015$qx)
+
+age_2015 <- as.numeric(life_table_2015$Age)
+
+px_2015 <- 1 - qx_2015
+
+mx_2015 <- -log(px_2015)
+
+lines(age_2015, mx_2015, type = "l", col = 5, lwd = 2)
+
+legend("topleft",legend = c("1841","1900","1950", "2000", "2015"), col = 1:5, lty = 1, lwd = 2)
+```
+The force of mortality is as expected, as it decreases from age 0 to age 10, then subsequently increases drastically from age 70 for all 5 different time period listed.
+
+## 2b
+Force of mortality versus t, for different selected ages x.
+
+```{r}
+#For age 0
+life_table_0 <- subset(life_table, Age == 0)
+
+qx_0 <- as.numeric(life_table_0$qx)
+
+mx_0 <- -log(1 - qx_0)
+
+plot(life_table_0$Year, mx_0, type = "l", 
+     xlab = "Year", ylab = expression(paste("mu"["x,t"])),
+     ylim = c(0, 1.5), lwd = 2, col = 1,
+     main = expression(paste("mu"["x,t"], " versus t, for age 0, 20, 40, 60, 80, 100"))) 
+
+#For age 20
+
+life_table_20 <- subset(life_table, Age == 20)
+
+qx_20 <- as.numeric(life_table_20$qx)
+
+mx_20 <- -log(1 - qx_20)
+
+lines(life_table_20$Year, mx_20, type = "l", col = 2, lwd = 2)
+
+#For age 40
+
+life_table_40 <- subset(life_table, Age == 40)
+
+qx_40 <- as.numeric(life_table_40$qx)
+
+mx_40 <- -log(1 - qx_40)
+
+lines(life_table_40$Year, mx_40, type = "l", col = 3, lwd = 2)
+
+#For age 60
+
+life_table_60 <- subset(life_table, Age == 60)
+
+qx_60 <- as.numeric(life_table_60$qx)
+
+mx_60 <- -log(1 - qx_60)
+
+lines(life_table_60$Year, mx_60, type = "l", col = 4, lwd = 2)
+
+#For age 80
+
+life_table_80 <- subset(life_table, Age == 80)
+
+qx_80 <- as.numeric(life_table_80$qx)
+
+mx_80 <- -log(1 - qx_80)
+
+lines(life_table_80$Year, mx_80, type = "l", col = 5, lwd = 2)
+
+#For age 100
+
+life_table_100 <- subset(life_table, Age == 100)
+
+qx_100 <- as.numeric(life_table_100$qx)
+
+mx_100 <- -log(1 - qx_100)
+
+lines(life_table_100$Year, mx_100, type = "l", col = 6, lwd = 2)
+
+par(xpd=TRUE)
+
+legend("topleft", legend = c("0", "20", "40", "60", "80", "100"), col = 1:6, lty = 1, lwd = 2)
+
+```
+The gap between the graph is due to the missing data during the period of World War 1. 
+
+## 2c
+The survival function $S_{0,t}(x)$ of a newborn, when using data from different selected time periods t.
+
+```{r}
+#For year 1841 
+
+plot(1:110, cumprod(px_1841[(0+1):(109+1)]), 
+     type = "l", ylim = 0:1,
+     xlab = "Age", ylab = expression(paste("S"["0, t"](x))), lwd = 2, col = 1,
+     main = expression(paste("S"["0, t"](x), " for 1841, 1900, 1950, 2000, 2015")))
+
+#For year 1900
+
+lines(1:110, cumprod(px_1900[(0+1):(109+1)]), 
+      type = "l", col = 2, lwd = 2)
+
+#for year 1950
+
+lines(1:110, cumprod(px_1950[(0+1):(109+1)]), 
+      type = "l", col = 3, lwd = 2)
+
+#For year 2000
+
+lines(1:110, cumprod(px_2000[(0+1):(109+1)]), 
+      type = "l", col = 4, lwd = 2)
+
+#For year 2015
+
+lines(1:110, cumprod(px_2015[(0+1):(109+1)]), 
+      type = "l", col = 5, lwd = 2)
+
+legend("bottomleft",legend = c("1841","1900","1950", "2000", "2015"), col = 1:5, lty = 1, lwd = 2)
+
+```
+As for the survival function, as time progress, the survival function of a new born increases due to advancement of medical technology hence increases the probability of survival. Therefore, explains the increase from different time period listed above. 
+
+## 2d
+Define our own graph: The life expectancy for a newborn.
+
+```{r}
+e_0 <- NULL
+
+for (i in seq(1841, 2015)) {
+   
+   life_table_i <- subset(life_table, Year == i)
+
+   px_i <- 1 - as.numeric(life_table_i$qx)
+   
+   add <- sum(cumprod(px_i[(0+1):(109+1)]))
+   
+   e_0 <- c(e_0, add)
+
+}
+
+plot(1841:2015, e_0, type = "l", lwd = 2,
+     xlab = "Year", ylab = expression(paste("e"[0])),
+     main = "Life expectancy for a newborn (1841-2015)")
+```
+Based on the graph, we can observe the life expectancy increased as time progress. However, there are multiple points in the time frame from 1841 to 2015, where there is a sudden drop in the life expectancy. 
+This may be due to:
+1. The abnormalities in 1860s could be caused by Third Cholera pandemic in Europe.
+2. 1914-1918, where there is a gap between the graphs is due to World War 1. 
+3. 1940-1945 is due to World War 2. 
